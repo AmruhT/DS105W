@@ -1,0 +1,138 @@
+---
+title: "Spotify Surfers Progress Presentation"
+author: "Amruh Tawil"
+format: revealjs
+---
+
+## Progress Made This Week
+
+This week we were able to begin collecting data for our project. Out main data sources have remained the same, being:
+
+-   Spotify's API
+-   AllMusic
+-   EveryNoise
+
+...and much more
+
+
+## PROJECT Roadmap
+
+The figure below shows a general path that we wish to follow, having already started some steps and aiming to complete future ones. This week there has been a focus on devising our approach and data mining with some early visualisations and insights. Our general approach has been to focus on our main ideas: scraping information about artists from playlists on the API and then scraping genres on every noise at once in order to gather data for analysis in preparation for building a music recommendation system.
+
+```{mermaid}
+graph LR;
+    style SpotifySurfers fill:#ffcc00,stroke:#333,stroke-width:2px,stroke-dasharray: 5px,rounded:true,font-family:Arial,font-size:16px,font-weight:bold;
+    SpotifySurfers[Spotify Surfers] -->|1.| DataCollection["Data Collection"];
+    DataCollection -->|2.| DataCleaningPreProcessing["Data Cleaning & Pre-Processing"];
+    DataCleaningPreProcessing -->|3.| LinkingDataSources["Linking all Data Sources"];
+    LinkingDataSources -->|4.| DevelopingAlgorithm["Developing Algorithm"];
+
+```
+
+## Point 1
+
+Firstly, we have managed to collect some data on the artists commonly found in Spotified’s featured playlists Top 10 Most Common Artists on featured spotify playlists. This was collected first through the endpoint given in the API documentation for the current featured playlists on Spotify. The data itself had to be indexed several times due to having multiple layers of lists of dictionaries before you could reach the key artist name. This was then organised by using the count function in python. Finally. it was formatted into a dictionary and pandas dataframe before being converted into a plotnine graph as shown above. 
+
+---
+
+## Point 1
+
+The main challenge here was the indexing of multiple layers as well as learning the API controls. Also an issue that cropped up was the appearance of ‘Various Artists’ in the name key. We attempted to solve this by checking for the first element the value associated with the key but it returned the same value meaning alternate sites will have to be used for the songs associated with these songs for further clarity.
+
+---
+
+## Point 2
+
+Secondly, we collected data on music genres from the site Every Noise At Once. We were able to scrape the 10 most similar genres for a given user provided genre for every noise in the site. Then it was scraping the songs from the Spotify playlist that every noise at once uses for each of the 10 genres to provide examples of suggestions in our recommendation system. This will be converted into a Pandas dataframe to better frame the data.
+
+---
+
+## Point 2
+
+Some challenges with regards to this was the scraping and gathering the right css selectors. Additionally, some of the Spotify playlists do not match with the corresponding id's. This is something I need to fix, as I currently do not have any visual data to show as a result.
+
+---
+
+## Point 3
+
+Thirdly, we experimented with data collection of other aspects of The Spotify API. These included popularity measures which could be further used as part of our recommendation system. Lastly, we’ve also explored some ideas with regards to the timeline of music where there may be possible opportunities to group different time periods together and classify them as such before putting them into a pandas dataframe for analysis or recommendation depending on user inputs. Further analysis of music such as tempo characteristics, beats can be used. One opportunity we seek to explore more is to compare the overlaps of certain artists amongst different playlists and genres to generate a similarity score that can be calculated.
+
+---
+
+## Using Spotify API {auto-animate="true"}
+
+``` r
+# Request Access Token
+def get_token():
+    authString = clientID + ":" + clientSecret
+    authBytes = authString.encode("utf-8")
+    authBase64 = str(base64.b64encode(authBytes), "utf-8")
+
+    url = 'https://accounts.spotify.com/api/token'
+    headers = {
+                'Authorization': 'Basic ' + authBase64,
+                'Content-type': 'application/x-www-form-urlencoded'
+              }
+    data = {'grant_type': 'client_credentials'}
+
+    result = requests.post(url, headers = headers, data = data)
+    json_result = json.loads(result.content)
+
+    return json_result["access_token"]
+```
+## Using Spotify API {auto-animate="true"}
+
+``` r
+# Format Authorisation Header
+def getAuthorisationHeader(token):
+  return {"Authorization": "Bearer " + token}
+
+# Get Playlist Data
+def parsePlaylist(playlist_name, token):
+  # Search for the playlist ID by name
+  search_url = f'https://api.spotify.com/v1/search?q={playlist_name}&type=playlist'
+  headers = getAuthorisationHeader(token)
+  search_response = requests.get(search_url, headers=headers)
+        
+  # Get playlist ID of closest match
+  playlist_id = closest_match['id']
+  
+  # Retrieve playlist tracks using the playlist ID
+  playlist_tracks_url = f'https://api.spotify.com/v1/playlists/{playlist_id}/tracks'
+  playlist_tracks_response = requests.get(playlist_tracks_url, 
+  headers=headers)
+```
+
+---
+
+## Elementary Web-Scraping {auto-animate="true"}
+``` r
+rows = sel.css('tr')[1:11]
+for row in rows:
+    name = row.css('td.note a::text').get()
+    link = row.css('td.note a::attr(href)').get()
+    playlistName = getPlaylistName(name)
+    similarGenres.append([name,link, playlistName])
+```
+---
+
+## Putting It All Together {auto-animate="true"}
+``` r
+with open('credentials.json','r') as file:
+    credentials = json.load(file)
+
+clientID = credentials["Client-ID"]
+clientSecret = credentials["Client-Secret"]
+
+token = get_token()
+
+songs = {}
+for genre in similarGenres:
+    songs[genre[0]] = parsePlaylist(genre[2], token)
+```
+
+---
+
+## Outputs
+
+![](/Users/amruhtawil/Downloads/Occurences of artists in playlists.png){.absolute top="170" left="30" width="400" height="400"}
